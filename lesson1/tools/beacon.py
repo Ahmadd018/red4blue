@@ -10,8 +10,8 @@ Usage: python3 tools/beacon.py
 
 import platform, socket, time, urllib.request, urllib.parse, os, random, datetime
 
-C2   = "192.168.11.149"
-PORT = 8080
+C2   = os.getenv("KALI_IP", "KALI_IP_NOT_SET")
+PORT = int(os.getenv("KALI_PORT", 8080))
 INTERVAL = 10   # seconds between beacons
 JITTER   = 0.3  # ±30% randomisation (mimics real RAT behaviour)
 
