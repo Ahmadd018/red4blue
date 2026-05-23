@@ -244,13 +244,19 @@ Landing Pages → New Page
 ```
 Email Templates → New Template
 
-  Name:    Microsoft 365 Security Alert
-  Subject: [ACTION REQUIRED] Unusual sign-in activity detected
-  HTML:    paste content of templates/phishing_email.html
+  Name:            MS Alert
+  Envelope Sender: noreply@microsoft-support.com
+  Subject:         [ACTION REQUIRED] Unusual sign-in activity detected
+
+  Text tab (required — paste this):
+    Microsoft 365 Security Alert - Please verify your account at {{.URL}}
+
   ✓  Add Tracking Image
 
 → Save Template
 ```
+
+> GoPhish's HTML editor corrupts template variables. Use the Text tab — it works reliably and the phishing link still reaches the victim.
 
 ### 4-D · Users & Groups
 
