@@ -4,7 +4,7 @@
 ```
 Kali (attacker)   192.168.11.149
 Windows (victim)  find with: ipconfig → IPv4 Address
-Lab domain        acmecorp-it.lab  →  192.168.11.149
+Lab domain        redlab.local  →  192.168.11.149
 ```
 
 ---
@@ -32,7 +32,7 @@ gophish --version
 ```
 C:\Windows\System32\drivers\etc\hosts
 
-192.168.11.149  acmecorp-it.lab
+192.168.11.149  redlab.local
 ```
 
 Open **4 terminals** on Kali now — each module below says which terminal to use.
@@ -42,25 +42,33 @@ Open **4 terminals** on Kali now — each module below says which terminal to us
 ## Phase 1 — Passive Recon (OSINT)
 
 > No packets touch the victim. Zero logs generated on their side.
+>
+> Replace `<TARGET>` with a domain you have permission to test,
+> or use a real company's public data for classroom demo (whois/DNS are public record).
 
 **Terminal 1**
 
 ```bash
+# Set the target domain once — used in all commands below
+TARGET=<TARGET>        # e.g. tesla.com for a live demo, or your own domain
+```
+
+```bash
 # 1a. Who registered the domain? When? What name servers?
-whois acmecorp.com
+whois $TARGET
 ```
 
 ```bash
 # 1b. DNS records — MX reveals mail provider, TXT reveals SPF (tells us email infra)
-host -t MX  acmecorp.com
-host -t TXT acmecorp.com
-host -t NS  acmecorp.com
+host -t MX  $TARGET
+host -t TXT $TARGET
+host -t NS  $TARGET
 ```
 
 ```bash
 # 1c. Certificate transparency — every SSL cert is logged publicly
 #     This leaks subdomains even if not in DNS
-curl -s "https://crt.sh/?q=%25.acmecorp.com&output=json" \
+curl -s "https://crt.sh/?q=%25.$TARGET&output=json" \
   | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
@@ -71,21 +79,21 @@ names={n for e in d for n in e.get('name_value','').split('\n') if n}
 
 ```bash
 # 1d. theHarvester — emails + subdomains from public search engines
-theHarvester -d acmecorp.com -b bing,crtsh -l 50
+theHarvester -d $TARGET -b bing,crtsh -l 50
 ```
 
 **Google Dorks — open in browser (show students on projector):**
 ```
-site:acmecorp.com filetype:pdf
-site:acmecorp.com inurl:login OR inurl:admin
-site:linkedin.com/in "acme corp"
-"@acmecorp.com" site:pastebin.com
+site:<TARGET> filetype:pdf
+site:<TARGET> inurl:login OR inurl:admin
+site:linkedin.com/in "<company name>"
+"@<TARGET>" site:pastebin.com
 ```
 
 **Shodan — paste in browser:**
 ```
-https://www.shodan.io/search?query=hostname%3Aacmecorp.com
-https://www.shodan.io/search?query=org%3A%22Acme+Corp%22+port%3A3389
+https://www.shodan.io/search?query=hostname%3A<TARGET>
+https://www.shodan.io/search?query=org%3A%22<Company+Name>%22+port%3A3389
 ```
 
 > **Blue team:** passive recon is invisible — the only defence is minimising public exposure
@@ -514,9 +522,9 @@ sudo evilginx -developer -p /opt/evilginx2/phishlets/
 
 ```
 # Inside evilginx console
-config domain acmecorp-it.lab
+config domain redlab.local
 config ip 192.168.11.149
-phishlets hostname o365 acmecorp-it.lab
+phishlets hostname o365 redlab.local
 phishlets enable o365
 lures create o365
 lures get-url 0

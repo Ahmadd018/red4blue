@@ -34,7 +34,7 @@ else
 fi
 
 # /etc/hosts lab domain
-DOMAIN="acmecorp-it.lab"
+DOMAIN="redlab.local"
 if ! grep -q "$DOMAIN" /etc/hosts; then
     echo "$KALI_IP  $DOMAIN" | sudo tee -a /etc/hosts > /dev/null
     ok "Added $DOMAIN → $KALI_IP to /etc/hosts"
