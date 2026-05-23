@@ -149,12 +149,23 @@ sudo nmap -A -T4 $VICTIM
 > - ICMP echo requests across the whole subnet
 > - Unusual TCP options (nmap OS fingerprinting probes)
 >
-> **Blue team — enable Windows Firewall logging (run on victim):**
+> **Blue team — enable Windows Firewall logging (run on victim as Administrator):**
 > ```powershell
+> # Turn firewall on first
+> netsh advfirewall set allprofiles state on
+>
+> # Enable drop logging
 > netsh advfirewall set allprofiles logging droppedconnections enable
 > netsh advfirewall set allprofiles logging filename C:\fw.log
 > ```
-> Then: `Get-Content C:\fw.log | Select-String "$KALI_IP"`
+> Now run the nmap scans from Kali, then check the log:
+> ```powershell
+> Get-Content C:\fw.log | Select-String "192.168.11.149"
+> ```
+> After the demo, turn the firewall back off:
+> ```powershell
+> netsh advfirewall set allprofiles state off
+> ```
 
 ---
 
