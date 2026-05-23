@@ -205,7 +205,7 @@ Open **https://127.0.0.1:3333** in your browser. Follow these steps.
 Sending Profiles → New Profile
 
   Name:         Lab SMTP Relay
-  From:         "Microsoft Security" <noreply@microsoft-support.com>
+  From:         noreply@microsoft-support.com
   Host:         127.0.0.1
   Port:         1025
   Username:     (leave blank)
