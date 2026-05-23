@@ -387,8 +387,14 @@ Double-click `invoice_Q4_2024.docm` and click **Enable Content** when Word promp
 
 What happens automatically:
 - Calculator opens — the macro ran
-- `%TEMP%\macro_ran.txt` is written to disk
+- `%TEMP%\macro_ran.txt` is written to disk (`C:\Users\<you>\AppData\Local\Temp\macro_ran.txt`)
 - A PowerShell command silently beacons back to Kali
+
+> **Note:** If Word shows "Malicious Macros Detected — Office will now close", Office's built-in
+> AMSI layer caught the `powershell -w hidden` pattern. Calc still opened (Stage 1 ran) but the
+> beacon was blocked. Good blue team talking point: Office has its own macro scanning independent
+> of Defender. To bypass for the demo: Word → File → Options → Trust Center → Trust Center
+> Settings → Macro Settings → **Enable all macros** → OK, then reopen the document.
 
 ---
 
