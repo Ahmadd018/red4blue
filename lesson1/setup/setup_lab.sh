@@ -20,7 +20,7 @@ for pkg in httrack theharvester golang nmap; do
     sudo apt-get install -y $pkg > /dev/null 2>&1 && ok "$pkg" || warn "$pkg skipped"
 done
 
-pip3 install python-docx requests aiosmtpd 2>/dev/null | grep -E "^(Successfully|already)" || true
+pip3 install python-docx requests aiosmtpd && ok "python-docx requests aiosmtpd" || warn "pip3 install failed"
 
 # Evilginx2
 if [ ! -f /usr/local/bin/evilginx ]; then
