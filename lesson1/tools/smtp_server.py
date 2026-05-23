@@ -56,8 +56,10 @@ def main():
     try:
         from aiosmtpd.controller import Controller
         ctrl = Controller(Handler(), hostname=host, port=port)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         ctrl.start()
-        asyncio.get_event_loop().run_forever()
+        loop.run_forever()
     except ImportError:
         print("[!] pip3 install aiosmtpd")
         print(f"    Alternative: python3 -m smtpd -n -c DebuggingServer {host}:{port}")
