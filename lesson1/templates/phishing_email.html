@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: "Segoe UI", Arial, sans-serif; font-size: 14px; color: #1b1b1b; margin:0; }
+    .wrap { max-width: 600px; margin: 0 auto; }
+    .header { background: #0078d4; padding: 18px 24px; }
+    .header span { color: #fff; font-size: 17px; font-weight: 600; }
+    .body { padding: 32px 24px; background: #f9f9f9; }
+    .alert { background: #fff4ce; border-left: 4px solid #ffc107;
+             padding: 14px 16px; margin: 20px 0; font-size: 13px; }
+    .btn { display:inline-block; background:#0078d4; color:#fff !important;
+           padding: 11px 26px; text-decoration:none; border-radius:3px;
+           font-weight:600; font-size:14px; }
+    .footer { padding: 14px 24px; background: #efefef;
+              font-size: 11px; color: #767676; }
+  </style>
+</head>
+<body><div class="wrap">
+
+  <div class="header"><span>Microsoft 365 Security Alert</span></div>
+
+  <div class="body">
+    <p>Dear <strong>{{.FirstName}}</strong>,</p>
+
+    <div class="alert">
+      <strong>⚠ Unusual sign-in activity detected</strong><br>
+      A sign-in to your account was attempted from an unrecognised device.
+    </div>
+
+    <table style="font-size:13px;border-collapse:collapse;margin-bottom:20px">
+      <tr><td style="padding:4px 16px 4px 0;color:#666">Date / Time</td>
+          <td>{{.CurrentDate}}</td></tr>
+      <tr><td style="padding:4px 16px 4px 0;color:#666">Location</td>
+          <td>Moscow, Russia</td></tr>
+      <tr><td style="padding:4px 16px 4px 0;color:#666">IP Address</td>
+          <td>185.220.101.47</td></tr>
+      <tr><td style="padding:4px 16px 4px 0;color:#666">Device</td>
+          <td>Unknown — Windows 10</td></tr>
+    </table>
+
+    <p>If this was <strong style="color:#cc0000">not you</strong>, verify your identity
+       immediately to secure your account.</p>
+
+    <p style="text-align:center;margin:28px 0">
+      <a href="{{.URL}}" class="btn">Verify My Account</a>
+    </p>
+
+    <p style="font-size:12px;color:#666">
+      Failure to verify within <strong>24 hours</strong> will result in
+      temporary account suspension.
+    </p>
+
+    <p>Microsoft Account Security Team</p>
+  </div>
+
+  <div class="footer">
+    Microsoft Corporation · One Microsoft Way · Redmond WA 98052<br>
+    <a href="#">Privacy</a> &nbsp;|&nbsp; <a href="#">Unsubscribe</a>
+    {{.Tracker}}
+  </div>
+
+</div></body>
+</html>
+
+<!--
+GoPhish variables used:
+  {{.FirstName}}   victim first name from target group
+  {{.URL}}         GoPhish tracking link → landing page
+  {{.CurrentDate}} auto date
+  {{.Tracker}}     invisible 1×1 tracking pixel (email-open detection)
+
+Social engineering levers: Authority · Urgency · Fear
+Red flags to teach: wrong sender domain · wrong link URL · SPF/DKIM fail
+-->

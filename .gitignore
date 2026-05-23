@@ -1,0 +1,25 @@
+# Runtime output — never commit
+*.log
+captured_credentials.log
+smtp_captured.log
+nmap_results/
+__pycache__/
+*.pyc
+*.pyo
+
+# GoPhish database
+gophish.db
+config.json
+
+# Generated payloads (created at runtime by create_macro_doc.py)
+lesson1/payloads/invoice_Q4_2024.docx
+lesson1/payloads/macro_code.vba
+lesson1/payloads/macro_iocs.json
+
+# Clone output
+/tmp/clone/
+/tmp/clone_full/
+
+# Evilginx runtime
+.evilginx/
+.claude/
